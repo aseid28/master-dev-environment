@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+
+# Runtime state
+.sessions/
+credentials/
+*.age
+
+# Secrets
+.env
+secrets.env

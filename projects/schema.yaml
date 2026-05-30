@@ -1,0 +1,54 @@
+# ============================================================
+# Project Definition Schema — Reference Template
+# Copy this file into projects/<your-project>/project.yaml
+# and fill in the values. All fields are required unless
+# marked [optional].
+# ============================================================
+
+project:
+  id: my-project-slug          # Unique kebab-case ID. Used as tmux session prefix.
+  name: "Human-readable name"  # Shown in dashboard and notifications.
+  repo: git@github.com:you/repo.git  # SSH remote for the project being built.
+  cost_cap_usd: 10.00          # HARD CAP in USD. Agent stops dead at this limit.
+                               # Never set above your comfortable overnight spend.
+  model: claude-opus-4-8       # Model for the agent loop. Karpathy Council uses haiku.
+  write_enabled: false         # [optional] Default false = consume-only. Set true
+                               # only when the agent needs to write to external systems.
+                               # Always reset to false after the run.
+
+milestones:
+  - id: m1                     # Unique ID within this project. Used in blocked_by refs.
+    name: "Scaffold"           # Short name shown in dashboard.
+    description: |             # Prose description of what "done" looks like.
+      The agent reads this verbatim. Be specific about the intended
+      file structure, behaviors, and constraints. The agent MUST NOT
+      plan or scaffold anything beyond this description.
+    acceptance_criteria:       # Checked by cleanup_loop.py before milestone is valid.
+      - "All tests pass (pytest/vitest)"
+      - "No bandit HIGH findings"
+      - "No semgrep ERROR findings"
+      - "README documents how to run"
+    blocked_by: []             # List of milestone IDs that must be COMPLETE before
+                               # this milestone can start. Leave empty for m1.
+
+  - id: m2
+    name: "Core feature"
+    description: |
+      Description of m2 scope. Must be self-contained — do not assume
+      the agent remembers what happened in m1 beyond what is committed.
+    acceptance_criteria:
+      - "All tests pass"
+      - "Feature behaves as described in the milestone description"
+    blocked_by:
+      - m1                     # m2 will not start until m1 is approved by Andrew.
+
+credentials:
+  - key: MY_API_KEY            # Name of the secret in the encrypted credential store.
+                               # The agent sees this as an env var with this exact name.
+    permission: read           # read (default) = consume-only. write = allowed to call
+                               # mutating APIs. Requires write_enabled: true above.
+    description: "API key for the external service"  # [optional] Human note.
+
+  - key: DATABASE_URL
+    permission: read
+    description: "Postgres connection string, read replica"

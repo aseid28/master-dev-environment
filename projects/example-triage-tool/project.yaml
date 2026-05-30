@@ -1,0 +1,77 @@
+project:
+  id: triage-tool
+  name: "Triage Tool"
+  repo: git@github.com:andrew-seidman/triage-tool.git
+  cost_cap_usd: 15.00
+  model: claude-opus-4-8
+  write_enabled: false
+
+milestones:
+  - id: m1
+    name: "Data Ingestion Scaffold"
+    description: |
+      Build the skeleton of the triage tool: a Python FastAPI application
+      that can receive inbound items from multiple channels (webhook endpoint
+      for email, Slack event, and generic webhook). Each item is normalized
+      into a common schema (id, source, subject, body, received_at, raw_payload)
+      and persisted to a local SQLite database via SQLModel.
+
+      The app must:
+      - Accept POST /ingest/{source} where source in [email, slack, webhook]
+      - Validate and normalize the payload into the common schema
+      - Persist to SQLite
+      - Return 202 Accepted with the assigned item ID
+      - Expose GET /items for listing (paginated, 20/page default)
+      - Expose GET /items/{id} for detail
+
+      Do NOT implement: urgency scoring, grouping, delegation drafting, or
+      any outbound notifications. Those are m2+.
+    acceptance_criteria:
+      - "All tests pass (pytest)"
+      - "No bandit HIGH findings"
+      - "No semgrep ERROR findings"
+      - "README documents how to run locally and how to POST a test item"
+      - "GET /items returns persisted items"
+    blocked_by: []
+
+  - id: m2
+    name: "Urgency Scoring"
+    description: |
+      Add an urgency scoring step that runs immediately after ingest.
+      Each item is scored 1–5 (5 = urgent) using a Claude API call with
+      a structured output (score: int, reasoning: str). Score and reasoning
+      are stored on the item record. GET /items should support
+      ?min_urgency=N filtering.
+
+      Do NOT implement: grouping, delegation drafting, or notifications.
+    acceptance_criteria:
+      - "All tests pass"
+      - "Items have score and reasoning fields after ingest"
+      - "GET /items?min_urgency=4 returns only high-urgency items"
+      - "No bandit HIGH findings"
+    blocked_by:
+      - m1
+
+  - id: m3
+    name: "Grouping + Pre-draft Delegation"
+    description: |
+      Group related items by topic using embeddings (semantic clustering).
+      For each group, generate a pre-drafted delegation suggestion:
+      who on the team should handle it and a draft response. These are
+      suggestions only — no outbound actions.
+
+      Groups and drafts are stored in the DB and exposed via:
+      GET /groups — list of groups with member item IDs
+      GET /groups/{id} — group detail with draft delegation
+    acceptance_criteria:
+      - "All tests pass"
+      - "Items are grouped after ingest"
+      - "Groups expose delegation draft with assignee and draft message"
+      - "No bandit HIGH findings"
+    blocked_by:
+      - m2
+
+credentials:
+  - key: ANTHROPIC_API_KEY
+    permission: read
+    description: "For urgency scoring and draft generation"
