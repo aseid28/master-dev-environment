@@ -16,3 +16,4 @@ credentials/
 # Secrets
 .env
 secrets.env
+.claude/settings.local.json
